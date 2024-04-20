@@ -90,7 +90,20 @@ bot.on('message', (msg) => {
                 bot.sendMessage(chatId, "/random - Random image from pixiv\n/help - Show this message")
                 break;
         }
-    } else if (msg.text) includes(msg.text, sendPhoto, chatId)
+    } else if (msg.text || msg.caption || msg.caption_entities) {
+        let msgText = [];
+        if (msg.text) msgText.push(msg.text);
+        if (msg.caption) msgText.push(msg.caption);
+        if (msg.caption_entities && msg.caption_entities.length > 0) {
+            for (const entity of msg.caption_entities) {
+                if (entity.type === "text_link") {
+                    msgText.push(entity.url);
+                }
+            }
+        }
+        includes(msgText.join(" "), sendPhoto, chatId)
+    }
+
 });
 
 console.log("Bot starting...");
