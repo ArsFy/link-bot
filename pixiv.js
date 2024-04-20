@@ -56,7 +56,7 @@ module.exports = {
 
                         if (res.length > 0) {
                             const filenames = res[0].filenames.map(filename => path.join(__dirname, "image", filename));
-                            callback(`ID: [${res[0].id}](https://pixiv.net/i/${res[0].id})\nTitle: ${res[0].title}\nUser: [${res[0].userName}](https://pixiv.net/users/${res[0].userId})\n\nTags: #${res[0].tags.join('  #')}`, filenames, chatId)
+                            callback(`ID: [${res[0].id}](https://pixiv.net/i/${res[0].id})\nTitle: ${res[0].title}\nUser: [${res[0].userName}](https://pixiv.net/users/${res[0].userId})\n\nTags: #${res[0].tags.join('  #')}`, filenames, chatId, res[0].tags.indexOf("R-18") !== -1)
                         } else {
                             axios({
                                 method: 'GET',
@@ -87,7 +87,7 @@ module.exports = {
                                     console.error(err)
                                 })
 
-                                callback(`ID: [${illust.id}](https://pixiv.net/i/${illust.id})\nTitle: ${illust.title}\nUser: [${illust.userName}](https://pixiv.net/users/${illust.userId})\n\nTags: #${tags.join('  #')}`, filenames, chatId)
+                                callback(`ID: [${illust.id}](https://pixiv.net/i/${illust.id})\nTitle: ${illust.title}\nUser: [${illust.userName}](https://pixiv.net/users/${illust.userId})\n\nTags: #${tags.join('  #')}`, filenames, chatId, tags.indexOf("R-18") !== -1)
                             }).catch(err => {
                                 console.error(err)
                             })
@@ -109,7 +109,7 @@ module.exports = {
 
                         if (res.length > 0) {
                             const filenames = res[0].filenames.map(filename => filename);
-                            callback(`ID: [${res[0].id}](https://pixiv.net/i/${res[0].id})\nTitle: ${res[0].title}\nUser: [${res[0].userName}](https://pixiv.net/users/${res[0].userId})\n\nTags: #${res[0].tags.join('  #')}`, filenames, chatId)
+                            callback(`ID: [${res[0].id}](https://pixiv.net/i/${res[0].id})\nTitle: ${res[0].title}\nUser: [${res[0].userName}](https://pixiv.net/users/${res[0].userId})\n\nTags: #${res[0].tags.join('  #')}`, filenames, chatId, res[0].tags.indexOf("R-18") !== -1)
                         } else get()
                     }).catch(err => {
                         console.error(err)
@@ -127,7 +127,7 @@ module.exports = {
 
             if (res.length > 0) {
                 const filenames = res[0].filenames.map(filename => filename);
-                callback(`ID: [${res[0].id}](https://pixiv.net/i/${res[0].id})\nTitle: ${res[0].title}\nUser: [${res[0].userName}](https://pixiv.net/users/${res[0].userId})\n\nTags: #${res[0].tags.join('  #')}`, filenames, chatId)
+                callback(`ID: [${res[0].id}](https://pixiv.net/i/${res[0].id})\nTitle: ${res[0].title}\nUser: [${res[0].userName}](https://pixiv.net/users/${res[0].userId})\n\nTags: #${res[0].tags.join('  #')}`, filenames, chatId, res[0].tags.indexOf("R-18") !== -1)
             }
         }).catch(err => {
             console.error(err)

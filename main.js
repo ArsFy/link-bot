@@ -11,7 +11,7 @@ const rules = {
 const includes = (msg, callback, chatId) => {
     for (const rule in rules) {
         if (msg.includes(rule)) {
-            const regex = new RegExp(`${rule}\/[^ ]*`, 'gi');
+            const regex = new RegExp(`${rule}\/[^ \n]*`, 'gi');
             const matchedURLs = msg.match(regex);
             if (matchedURLs) rules[rule](matchedURLs, callback, chatId);
         }
@@ -30,7 +30,7 @@ const bot = new TelegramBot(config.BOT_TOKEN, { polling: true });
 bot.on("polling_error", console.log);
 bot.getMe().then(me => username = me.username);
 
-const sendPhoto = (msg, filenames, chatId) => {
+const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
     filenames = filenames.slice(0, 6);
     const tasks = filenames.map(photoPath => {
         return new Promise(async (resolve, reject) => {
@@ -62,7 +62,8 @@ const sendPhoto = (msg, filenames, chatId) => {
             images.push({
                 type: 'photo',
                 media: file_id,
-                ...(i == 0 ? { caption: msg, parse_mode: 'Markdown' } : {})
+                ...(i == 0 ? { caption: msg, parse_mode: 'Markdown' } : {}),
+                has_spoiler: hasSpoiler
             })
             if (r[i].photoPath) MongoPool.getInstance().then(client => {
                 const collection = client.db(config.DB_NAME).collection("file-cache");
