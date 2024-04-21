@@ -10,8 +10,8 @@ const groupSetting = {};
 
 // Rules
 const rules = {
-    'pixiv.net': pixiv.main,
-    'twitter.com': twitter.main,
+    // 'pixiv.net': pixiv.main,
+    // 'twitter.com': twitter.main,
 }
 const includes = (msg, callback, chatId, isPhoto) => {
     for (const rule in rules) {
@@ -91,7 +91,8 @@ bot.on('message', (msg) => {
     const chatId = msg.chat.id;
 
     if (msg.text && msg.text.startsWith("/")) {
-        switch (msg.text) {
+        const command = msg.text.split(" ");
+        switch (command[0]) {
             case "/random": case "/random@" + username:
                 pixiv.random(sendPhoto, chatId)
                 break;
@@ -99,7 +100,6 @@ bot.on('message', (msg) => {
                 bot.sendMessage(chatId, "/random - Random image from pixiv\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
                 break;
             case "/set": case "/set@" + username:
-                const command = msg.text.split(" ");
                 if (command.length == 2) {
                     if (msg.chat.type === "private") {
                         bot.sendMessage(chatId, "This command only works in group")
@@ -140,7 +140,7 @@ bot.on('message', (msg) => {
                     }
                 }
             }
-            includes(msg.text, sendPhoto, chatId, true)
+            includes(msgText.join(" "), sendPhoto, chatId, true)
         }
 
         if (groupSetting[chatId] == undefined) {
