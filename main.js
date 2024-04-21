@@ -19,7 +19,9 @@ const includes = (msg, callback, chatId, isPhoto) => {
             const regex = new RegExp(`${rule}\/[^ \n]*`, 'gi');
             const matchedURLs = msg.match(regex);
             if (matchedURLs) {
-                rules[rule](matchedURLs, !isPhoto ? callback : () => { }, chatId);
+                rules[rule](matchedURLs, !isPhoto ? callback : (msg, filenames, chatId) => {
+                    bot.sendMessage(chatId, "🥰🥰");
+                }, chatId);
             }
         }
     }
