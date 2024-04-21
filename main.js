@@ -95,7 +95,7 @@ bot.on('message', (msg) => {
             case "/random": case "/random@" + username:
                 pixiv.random(sendPhoto, chatId)
                 break;
-            case "/random-twitter": case "/random-twitter@" + username:
+            case "/random_twitter": case "/random_twitter@" + username:
                 twitter.random(sendPhoto, chatId)
                 break;
             case "/start": case "/start@" + username:
