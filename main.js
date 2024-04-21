@@ -19,7 +19,6 @@ const includes = (msg, callback, chatId, isPhoto) => {
             const regex = new RegExp(`${rule}\/[^ \n]*`, 'gi');
             const matchedURLs = msg.match(regex);
             if (matchedURLs) {
-                if (isPhoto && rule != "pixiv.net") continue;
                 rules[rule](matchedURLs, !isPhoto ? callback : () => { }, chatId);
             }
         }
@@ -96,8 +95,14 @@ bot.on('message', (msg) => {
             case "/random": case "/random@" + username:
                 pixiv.random(sendPhoto, chatId)
                 break;
+            case "/random-twitter": case "/random-twitter@" + username:
+                twitter.random(sendPhoto, chatId)
+                break;
+            case "/start": case "/start@" + username:
+                bot.sendMessage(chatId, "Use /help to see the list of commands")
+                break;
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, "/random - Random image from pixiv\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
+                bot.sendMessage(chatId, "/random - Random image from pixiv\n/random-twitter - Random image from twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
                 break;
             case "/set": case "/set@" + username:
                 if (command.length == 2) {
@@ -128,7 +133,7 @@ bot.on('message', (msg) => {
                     bot.sendMessage(chatId, "/set [on/off] - Turn on/off the bot in group")
                 }
         }
-    } else if (msg.text || msg.caption || msg.caption_entities) {
+    } else if (msg.chat.type != "private" && (msg.text || msg.caption || msg.caption_entities)) {
         const run = () => {
             if (msg.text) includes(msg.text, sendPhoto, chatId, false)
             let msgText = [];

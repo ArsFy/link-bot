@@ -114,5 +114,17 @@ module.exports = {
                 console.error(e)
             }
         }
+    },
+    random: (callback, chatId) => {
+        MongoPool.getInstance().then(async client => {
+            const collection = client.db(config.DB_NAME).collection("twitter-images");
+            const res = await collection.aggregate([{ $sample: { size: 1 } }]).toArray();
+
+            if (res.length > 0) {
+                callback(`Link: [${res[0].id}](${res[0].link})\nUser: [${res[0].username}](${res[0].userlink})\n\n${res[0].post}`, res[0].filenames, chatId, false)
+            }
+        }).catch(err => {
+            console.error(err)
+        })
     }
 }
