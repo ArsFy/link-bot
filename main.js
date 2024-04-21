@@ -54,7 +54,13 @@ const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
                 if (res.length > 0) {
                     resolve({ photo: [{ file_id: res[0].file_id, photoPath }] });
                 } else {
-                    let r = await bot.sendPhoto(config.TEMP_CHAT, fs.readFileSync(photoPath));
+                    const fromChat = await bot.getChat(chatId)
+                    let chatName = fromChat.title || fromChat.username || 'Unknown Chat';
+                    let chatLink = fromChat.username ? `https://t.me/${fromChat.username}` : 'Chat link not available';
+                    let r = await bot.sendPhoto(config.TEMP_CHAT, fs.readFileSync(photoPath), {
+                        caption: `From [${chatName}](${chatLink})`,
+                        parse_mode: 'Markdown'
+                    });
                     resolve({
                         ...r,
                         photoPath: String(photoPath),
