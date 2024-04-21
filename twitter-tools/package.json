@@ -1,0 +1,11 @@
+{
+  "name": "twitter-tools",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "puppeteer": "^22.6.5"
+  }
+}

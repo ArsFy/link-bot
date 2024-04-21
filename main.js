@@ -1,12 +1,14 @@
 const config = require('./config');
 const TelegramBot = require('node-telegram-bot-api');
-const pixiv = require('./pixiv');
 const fs = require('fs');
-const MongoPool = require("./db-pool")
+const MongoPool = require("./db-pool");
+const pixiv = require('./pixiv');
+const twitter = require('./twitter');
 
 // Rules
 const rules = {
-    'pixiv.net': pixiv.main
+    'pixiv.net': pixiv.main,
+    'twitter.com': twitter.main,
 }
 const includes = (msg, callback, chatId) => {
     for (const rule in rules) {
