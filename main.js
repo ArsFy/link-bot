@@ -5,6 +5,9 @@ const MongoPool = require("./db-pool");
 const pixiv = require('./pixiv');
 const twitter = require('./twitter');
 
+// Group Setting Cache
+const groupSetting = {};
+
 // Rules
 const rules = {
     'pixiv.net': pixiv.main,
@@ -93,7 +96,7 @@ bot.on('message', (msg) => {
                 pixiv.random(sendPhoto, chatId)
                 break;
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, "/random - Random image from pixiv\n/help - Show this message")
+                bot.sendMessage(chatId, "/random - Random image from pixiv\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
                 break;
             case "/set": case "/set@" + username:
                 const command = msg.text.split(" ");
@@ -104,9 +107,12 @@ bot.on('message', (msg) => {
                     } else bot.getChatAdministrators(chatId).then(administrators => {
                         const isAdmin = administrators.some(admin => admin.user.id === msg.from.id);
                         if (isAdmin) {
-                            MongoPool.getInstance().then(async client => {
+                            if (command[1] != "on" && command[1] != "off") {
+                                bot.sendMessage(chatId, "/set [on/off] - Turn on/off the bot in group")
+                            } else MongoPool.getInstance().then(async client => {
                                 const collection = client.db(config.DB_NAME).collection("group");
                                 await collection.updateOne({ id: chatId }, { $set: { id: chatId, status: command[1] } }, { upsert: true });
+                                groupSetting[chatId] = command[1];
                                 bot.sendMessage(chatId, "Success");
                             }).catch(err => {
                                 console.error(err)
@@ -123,12 +129,7 @@ bot.on('message', (msg) => {
                 }
         }
     } else if (msg.text || msg.caption || msg.caption_entities) {
-        MongoPool.getInstance().then(async client => {
-            const collection = client.db(config.DB_NAME).collection("group");
-            const res = await collection.find({ id: chatId }).toArray();
-
-            if (res.length > 0 && res[0].status == "off") return;
-
+        const run = () => {
             if (msg.text) includes(msg.text, sendPhoto, chatId, false)
             let msgText = [];
             if (msg.caption) msgText.push(msg.caption);
@@ -140,10 +141,23 @@ bot.on('message', (msg) => {
                 }
             }
             includes(msg.text, sendPhoto, chatId, true)
-        }).catch(err => {
-            console.error(err)
-        })
+        }
 
+        if (groupSetting[chatId] == undefined) {
+            MongoPool.getInstance().then(async client => {
+                const collection = client.db(config.DB_NAME).collection("group");
+                const res = await collection.find({ id: chatId }).toArray();
+
+                if (res.length > 0 && res[0].status == "off") {
+                    groupSetting[chatId] = "off";
+                    return;
+                } else groupSetting[chatId] = "on";
+
+                run()
+            }).catch(err => {
+                console.error(err)
+            })
+        } else if (groupSetting[chatId] == "on") run()
     }
 
 });
