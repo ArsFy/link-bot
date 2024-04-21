@@ -12,6 +12,7 @@ const groupSetting = {};
 const rules = {
     'pixiv.net': pixiv.main,
     'twitter.com': twitter.main,
+    'x.com': twitter.main
 }
 const includes = (msg, callback, chatId, isPhoto, formId) => {
     for (const rule in rules) {
