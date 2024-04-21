@@ -10,12 +10,15 @@ const rules = {
     'pixiv.net': pixiv.main,
     'twitter.com': twitter.main,
 }
-const includes = (msg, callback, chatId) => {
+const includes = (msg, callback, chatId, isPhoto) => {
     for (const rule in rules) {
         if (msg.includes(rule)) {
             const regex = new RegExp(`${rule}\/[^ \n]*`, 'gi');
             const matchedURLs = msg.match(regex);
-            if (matchedURLs) rules[rule](matchedURLs, callback, chatId);
+            if (matchedURLs) {
+                if (isPhoto && rule != "pixiv.net") continue;
+                rules[rule](matchedURLs, !isPhoto ? callback : () => { }, chatId);
+            }
         }
     }
 }
@@ -92,19 +95,55 @@ bot.on('message', (msg) => {
             case "/help": case "/help@" + username:
                 bot.sendMessage(chatId, "/random - Random image from pixiv\n/help - Show this message")
                 break;
+            case "/set": case "/set@" + username:
+                const command = msg.text.split(" ");
+                if (command.length == 2) {
+                    if (msg.chat.type === "private") {
+                        bot.sendMessage(chatId, "This command only works in group")
+                        return;
+                    } else bot.getChatAdministrators(chatId).then(administrators => {
+                        const isAdmin = administrators.some(admin => admin.user.id === msg.from.id);
+                        if (isAdmin) {
+                            MongoPool.getInstance().then(async client => {
+                                const collection = client.db(config.DB_NAME).collection("group");
+                                await collection.updateOne({ id: chatId }, { $set: { id: chatId, status: command[1] } }, { upsert: true });
+                                bot.sendMessage(chatId, "Success");
+                            }).catch(err => {
+                                console.error(err)
+                                bot.sendMessage(chatId, "Failed to set status")
+                            })
+                        } else {
+                            bot.sendMessage(chatId, "Only administrators can use this command");
+                        }
+                    }).catch(err => {
+                        console.error(err);
+                    });
+                } else {
+                    bot.sendMessage(chatId, "/set [on/off] - Turn on/off the bot in group")
+                }
         }
     } else if (msg.text || msg.caption || msg.caption_entities) {
-        let msgText = [];
-        if (msg.text) msgText.push(msg.text);
-        if (msg.caption) msgText.push(msg.caption);
-        if (msg.caption_entities && msg.caption_entities.length > 0) {
-            for (const entity of msg.caption_entities) {
-                if (entity.type === "text_link") {
-                    msgText.push(entity.url);
+        MongoPool.getInstance().then(async client => {
+            const collection = client.db(config.DB_NAME).collection("group");
+            const res = await collection.find({ id: chatId }).toArray();
+
+            if (res.length > 0 && res[0].status == "off") return;
+
+            if (msg.text) includes(msg.text, sendPhoto, chatId, false)
+            let msgText = [];
+            if (msg.caption) msgText.push(msg.caption);
+            if (msg.caption_entities && msg.caption_entities.length > 0) {
+                for (const entity of msg.caption_entities) {
+                    if (entity.type === "text_link") {
+                        msgText.push(entity.url);
+                    }
                 }
             }
-        }
-        includes(msgText.join(" "), sendPhoto, chatId)
+            includes(msg.text, sendPhoto, chatId, true)
+        }).catch(err => {
+            console.error(err)
+        })
+
     }
 
 });
