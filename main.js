@@ -102,7 +102,7 @@ bot.on('message', (msg) => {
                 bot.sendMessage(chatId, "Use /help to see the list of commands")
                 break;
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, "/random - Random image from pixiv\n/random-twitter - Random image from twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
+                bot.sendMessage(chatId, "/random - Random image from pixiv\n/random_twitter - Random image from twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
                 break;
             case "/set": case "/set@" + username:
                 if (command.length == 2) {
