@@ -13,14 +13,16 @@ const rules = {
     'pixiv.net': pixiv.main,
     'twitter.com': twitter.main,
 }
-const includes = (msg, callback, chatId, isPhoto) => {
+const includes = (msg, callback, chatId, isPhoto, formId) => {
     for (const rule in rules) {
         if (msg.includes(rule)) {
             const regex = new RegExp(`${rule}\/[^ \n]*`, 'gi');
             const matchedURLs = msg.match(regex);
             if (matchedURLs) {
                 rules[rule](matchedURLs, !isPhoto ? callback : (msg, filenames, chatId) => {
-                    bot.sendMessage(chatId, "🥰🥰");
+                    bot.setMessageReaction(chatId, formId, {
+                        reaction: [{ type: 'emoji', emoji: '🥰' }]
+                    });
                 }, chatId);
             }
         }
@@ -137,7 +139,7 @@ bot.on('message', (msg) => {
         }
     } else if (msg.chat.type != "private" && (msg.text || msg.caption || msg.caption_entities)) {
         const run = () => {
-            if (msg.text) includes(msg.text, sendPhoto, chatId, false)
+            if (msg.text) includes(msg.text, sendPhoto, chatId, false, msg.message_id)
             let msgText = [];
             if (msg.caption) msgText.push(msg.caption);
             if (msg.caption_entities && msg.caption_entities.length > 0) {
@@ -147,7 +149,7 @@ bot.on('message', (msg) => {
                     }
                 }
             }
-            includes(msgText.join(" "), sendPhoto, chatId, true)
+            includes(msgText.join(" "), sendPhoto, chatId, true, msg.message_id)
         }
 
         if (groupSetting[chatId] == undefined) {
