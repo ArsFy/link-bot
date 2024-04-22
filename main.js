@@ -105,7 +105,7 @@ bot.on('message', (msg) => {
         const command = msg.text.split(" ");
         switch (command[0]) {
             case "/random": case "/random@" + username:
-                [pixiv.random, twitter.random][Math.floor(Math.random() * functions.length)](sendPhoto, chatId);
+                [pixiv.random, twitter.random][Math.floor(Math.random() * 2)](sendPhoto, chatId);
                 break;
             case "/start": case "/start@" + username:
                 bot.sendMessage(chatId, "This Bot will parse the link and send pictures/text when a specific link appears in the group.\nUse /help to see the list of commands\n\nRepo: https://github.com/ArsFy/link-bot")
