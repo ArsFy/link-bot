@@ -5,7 +5,9 @@ const config = {
     PIXIV_COOKIE: process.env.PIXIV_COOKIE,
     TWITTER_AUTHORIZATION: process.env.TWITTER_AUTHORIZATION,
     TWITTER_COOKIE: process.env.TWITTER_COOKIE,
-    TWITTER_CSRF: process.env.TWITTER_CSRF
+    TWITTER_CSRF: process.env.TWITTER_CSRF,
+    ADMIN: process.env.ADMIN,
+    ENABLED_NSFWJS: process.env.ENABLED_NSFWJS == "true",
 }
 
 module.exports = config;

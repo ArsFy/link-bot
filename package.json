@@ -1,9 +1,11 @@
 {
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.18.0",
     "axios": "^1.6.8",
     "cheerio": "^1.0.0-rc.12",
     "fs": "^0.0.1-security",
     "mongodb": "^6.5.0",
-    "node-telegram-bot-api": "^0.65.1"
+    "node-telegram-bot-api": "^0.65.1",
+    "nsfwjs": "^4.1.0"
   }
 }

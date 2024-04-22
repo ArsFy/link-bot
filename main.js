@@ -20,7 +20,8 @@ const includes = (msg, callback, chatId, isPhoto, formId) => {
             const regex = new RegExp(`${rule}\/[^ \n]*`, 'gi');
             const matchedURLs = msg.match(regex);
             if (matchedURLs) {
-                rules[rule](matchedURLs, !isPhoto ? callback : (msg, filenames, chatId) => {
+                if (rule == "pixiv.net") bot.setMessageReaction(chatId, formId, { reaction: [{ type: 'emoji', emoji: '❤️' }] });
+                rules[rule](matchedURLs, !isPhoto ? callback : () => {
                     bot.setMessageReaction(chatId, formId, {
                         reaction: [{ type: 'emoji', emoji: '🥰' }]
                     });
@@ -56,9 +57,9 @@ const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
                 } else {
                     const fromChat = await bot.getChat(chatId)
                     let chatName = fromChat.title || fromChat.username || 'Unknown Chat';
-                    let chatLink = fromChat.username ? `https://t.me/${fromChat.username}` : 'Chat link not available';
+                    let chatLink = fromChat.username ? `https://t.me/${fromChat.username}` : '';
                     let r = await bot.sendPhoto(config.TEMP_CHAT, fs.readFileSync(photoPath), {
-                        caption: `From [${chatName}](${chatLink})`,
+                        caption: msg + `\n\nFrom [${chatName}](${chatLink})`,
                         parse_mode: 'Markdown'
                     });
                     resolve({
@@ -104,16 +105,40 @@ bot.on('message', (msg) => {
         const command = msg.text.split(" ");
         switch (command[0]) {
             case "/random": case "/random@" + username:
-                pixiv.random(sendPhoto, chatId)
-                break;
-            case "/random_twitter": case "/random_twitter@" + username:
-                twitter.random(sendPhoto, chatId)
+                [pixiv.random, twitter.random][Math.floor(Math.random() * functions.length)](sendPhoto, chatId);
                 break;
             case "/start": case "/start@" + username:
-                bot.sendMessage(chatId, "Use /help to see the list of commands")
+                bot.sendMessage(chatId, "This Bot will parse the link and send pictures/text when a specific link appears in the group.\nUse /help to see the list of commands\n\nRepo: https://github.com/ArsFy/link-bot")
                 break;
+            case "/status": case "/status@" + username:
+                MongoPool.getInstance().then(async client => {
+                    const pixiv = client.db(config.DB_NAME).collection("pixiv-images");
+                    const pixivCount = await pixiv.countDocuments();
+                    const twitter = client.db(config.DB_NAME).collection("twitter-images");
+                    const twitterCount = await twitter.countDocuments();
+                    bot.sendMessage(chatId, `Pixiv: ${pixivCount}\nTwitter: ${twitterCount}`)
+                })
+                break;
+            case "/delete": case "/delete@" + username:
+                if (config.ADMIN && msg.from.id == config.ADMIN) {
+                    if (command.length == 3) {
+                        const collectionName = command[1] == "pixiv" ? "pixiv-images" : "twitter-images";
+                        MongoPool.getInstance().then(async client => {
+                            const collection = client.db(config.DB_NAME).collection(collectionName);
+                            await collection.deleteOne({ id: command[1] });
+                            bot.sendMessage(chatId, "Success")
+                        }).catch(err => {
+                            console.error(err)
+                            bot.sendMessage(chatId, "Failed to delete")
+                        })
+                    } else {
+                        bot.sendMessage(chatId, "/delete [pixiv/twitter] [id]")
+                    }
+                } else {
+                    bot.sendMessage(chatId, "You are not authorized to use this command")
+                }
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, "/random - Random image from pixiv\n/random_twitter - Random image from twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
+                bot.sendMessage(chatId, "/status - Bot Status\n/random - Random image from pixiv or twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
                 break;
             case "/set": case "/set@" + username:
                 if (command.length == 2) {

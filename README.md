@@ -10,6 +10,8 @@
 - `TWITTER_COOKIE` - Twitter Full Cookie
 - `TWITTER_CSRF` - Twitter CSRF Header
 - `MONGODB_URI` - MongoDB URI
+- `ADMIN` - Your TG ID (Number)
+- `ENABLED_NSFWJS` - Enabled nsfw.js (`twitter.js:89`), set `true` or `false`
 
 #### How to get twitter header
 

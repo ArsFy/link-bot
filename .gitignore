@@ -1,4 +1,4 @@
 powershell.ps1
 image/*
 node_modules/*
-link-bot.env
+link-bot.sh

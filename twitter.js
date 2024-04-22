@@ -5,6 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const MongoPool = require("./db-pool");
 
+let model; if (config.ENABLED_NSFWJS) {
+    const tf = require("@tensorflow/tfjs-node");
+    const nsfw = require("nsfwjs");
+    nsfw.load("InceptionV3").then(m => model = m);
+}
+
 const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     Referer: 'https://twitter.com/',
@@ -69,6 +75,8 @@ module.exports = {
                                 const tweetContent = tweet.full_text;
                                 const tweetImageUrl = tweet.entities.media.map(media => media.media_url_https);
 
+                                if (tweetImageUrl.length === 0) return;
+
                                 const filenames = []
                                 for (const i in tweetImageUrl) {
                                     const filename = path.join(__dirname, "image", `${id}-${i}.${tweetImageUrl[i].split(".").pop()}`)
@@ -76,21 +84,38 @@ module.exports = {
                                     await downloads(filename, tweetImageUrl[i])
                                 }
 
-                                MongoPool.getInstance().then(async client => {
-                                    const collection = client.db(config.DB_NAME).collection("twitter-images");
-                                    await collection.insertOne({
-                                        id: id,
-                                        link: urls[url],
-                                        username: author.name,
-                                        userlink: userLink,
-                                        post: tweetContent,
-                                        filenames: filenames
-                                    })
-                                }).catch(err => {
-                                    console.error(err)
-                                })
+                                let isHentai = false;
+                                let isNeutral = false;
+                                if (config.ENABLED_NSFWJS) for (const i in filenames) {
+                                    const image = tf.node.decodeImage(fs.readFileSync(filenames[i]), 3);
+                                    const predictions = await model.classify(image);
+                                    image.dispose();
 
-                                callback(`Link: [${id}](${urls[url]})\nUser: [${author.name}](${userLink})\n\n${tweetContent}`, filenames, chatId, false)
+                                    if (!isHentai) {
+                                        const maxEntry = Object.entries(predictions).reduce((max, [key, value]) => value > max[1] ? [key, value] : max, ["", 0]);
+                                        if (maxEntry[0] === "Hentai" && maxEntry[1] > 0.5) isHentai = true;
+                                        else if (maxEntry[0] === "Neutral") isNeutral = true;
+                                    }
+                                }
+
+                                if (!isNeutral) {
+                                    MongoPool.getInstance().then(async client => {
+                                        const collection = client.db(config.DB_NAME).collection("twitter-images");
+                                        await collection.insertOne({
+                                            id: id,
+                                            link: urls[url],
+                                            username: author.name,
+                                            userlink: userLink,
+                                            post: tweetContent,
+                                            filenames: filenames,
+                                            isHentai: isHentai
+                                        })
+                                    }).catch(err => {
+                                        console.error(err)
+                                    })
+
+                                    callback(`Link: [${id}](${urls[url]})\nUser: [${author.name}](${userLink})\n\n${tweetContent}`, filenames, chatId, isHentai)
+                                }
                             }
                         }
                     }
@@ -104,7 +129,7 @@ module.exports = {
                         const res = await collection.find({ id: String(id) }).toArray();
 
                         if (res.length > 0) {
-                            callback(`Link: [${res[0].id}](${res[0].link})\nUser: [${res[0].username}](${res[0].userlink})\n\n${res[0].post}`, res[0].filenames, chatId, false)
+                            callback(`Link: [${res[0].id}](${res[0].link})\nUser: [${res[0].username}](${res[0].userlink})\n\n${res[0].post}`, res[0].filenames, chatId, !!res[0].isHentai)
                         } else get()
                     }).catch(err => {
                         console.error(err)
