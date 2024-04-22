@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const MongoPool = require("./db-pool");
 
-let model; if (config.ENABLED_NSFWJS) {
-    const tf = require("@tensorflow/tfjs-node");
-    const nsfw = require("nsfwjs");
+let model, tf, nsfw; if (config.ENABLED_NSFWJS) {
+    tf = require("@tensorflow/tfjs-node");
+    nsfw = require("nsfwjs");
     nsfw.load("InceptionV3").then(m => model = m);
 }
 
