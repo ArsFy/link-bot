@@ -12,6 +12,11 @@
 - `MONGODB_URI` - MongoDB URI
 - `ADMIN` - Your TG ID (Number)
 - `ENABLED_NSFWJS` - Enabled nsfw.js (`twitter.js:89`), set `true` or `false`
+- `ENABLED_SEARCH` - Enabled image search
+
+#### Tips
+- NSFWJS requires a lot of mem/cpu
+- Search requires a lot of cpu/db
 
 #### How to get twitter header
 

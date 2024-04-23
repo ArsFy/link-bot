@@ -8,6 +8,7 @@ const config = {
     TWITTER_CSRF: process.env.TWITTER_CSRF,
     ADMIN: process.env.ADMIN,
     ENABLED_NSFWJS: process.env.ENABLED_NSFWJS == "true",
+    ENABLED_SEARCH: process.env.ENABLED_SEARCH == "true",
 }
 
 module.exports = config;

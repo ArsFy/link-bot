@@ -1,9 +1,11 @@
 const config = require('./config');
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
+
 const MongoPool = require("./db-pool");
 const pixiv = require('./pixiv');
 const twitter = require('./twitter');
+const { imageHashAsync, searchImage } = require('./phash');
 
 // Group Setting Cache
 const groupSetting = {};
@@ -56,15 +58,33 @@ const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
                     resolve({ photo: [{ file_id: res[0].file_id, photoPath }] });
                 } else {
                     const fromChat = await bot.getChat(chatId)
-                    let chatName = fromChat.title || fromChat.username || 'Unknown Chat';
-                    let chatLink = fromChat.username ? `https://t.me/${fromChat.username}` : '';
-                    let r = await bot.sendPhoto(config.TEMP_CHAT, fs.readFileSync(photoPath), {
+                    const chatName = fromChat.title || fromChat.username || 'Unknown Chat';
+                    const chatLink = fromChat.username ? `https://t.me/${fromChat.username}` : '';
+                    const imageFile = fs.readFileSync(photoPath)
+                    const msgInfo = await bot.sendPhoto(config.TEMP_CHAT, imageFile, {
                         caption: msg + `\n\nFrom [${chatName}](${chatLink})`,
                         parse_mode: 'Markdown'
                     });
+                    let imageHash, parts;
+                    if (config.ENABLED_SEARCH) {
+                        imageHash = await imageHashAsync(imageFile, 16, true);
+                        parts = [
+                            imageHash.substring(0, imageHash.length / 4),
+                            imageHash.substring(imageHash.length / 4, imageHash.length / 2),
+                            imageHash.substring(imageHash.length / 2, imageHash.length * 3 / 4),
+                            imageHash.substring(imageHash.length * 3 / 4),
+                        ];
+                    }
                     resolve({
-                        ...r,
+                        ...msgInfo,
                         photoPath: String(photoPath),
+                        ...(config.ENABLED_SEARCH ? {
+                            hash: imageHash,
+                            hashPart1: parts[0],
+                            hashPart2: parts[1],
+                            hashPart3: parts[2],
+                            hashPart4: parts[3]
+                        } : {})
                     });
                 }
             } catch (err) {
@@ -86,9 +106,17 @@ const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
             })
             if (r[i].photoPath) MongoPool.getInstance().then(client => {
                 const collection = client.db(config.DB_NAME).collection("file-cache");
-                collection.insertOne({ photo_path: r[i].photoPath, file_id })
-                    .then(() => { })
-                    .catch(err => console.error(err));
+                collection.insertOne({
+                    photo_path: r[i].photoPath,
+                    file_id,
+                    ...(config.ENABLED_SEARCH ? {
+                        hash: r[i].hash,
+                        hashPart1: r[i].hashPart1,
+                        hashPart2: r[i].hashPart2,
+                        hashPart3: r[i].hashPart3,
+                        hashPart4: r[i].hashPart4
+                    } : {})
+                }).then(() => { }).catch(err => console.error(err));
             }).catch(err => {
                 console.error(err);
             });
@@ -137,6 +165,44 @@ bot.on('message', (msg) => {
                 } else {
                     bot.sendMessage(chatId, "You are not authorized to use this command")
                 }
+            case "/search": case "/search@" + username:
+                if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
+                    const this_file_id = msg.reply_to_message.photo.pop().file_id;
+                    bot.downloadFile(this_file_id, "./image/" + this_file_id).then(() => {
+                        MongoPool.getInstance().then(async client => {
+                            const db = client.db(config.DB_NAME);
+                            searchImage(`./image/${this_file_id}`, 16, true, db, 0.8).then(results => {
+                                if (results.length > 0) {
+                                    const photoPath = results[0].photo_path;
+                                    db.collection("pixiv-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
+                                        if (res.length > 0) {
+                                            const illust = res[0];
+                                            const tags = illust.tags;
+                                            const filenames = illust.filenames;
+                                            sendPhoto(`ID: [${illust.id}](https://pixiv.net/i/${illust.id})\nTitle: ${illust.title}\nUser: [${illust.userName}](https://pixiv.net/users/${illust.userId})\n\nTags: #${tags.join('  #')}`, filenames, chatId, tags.indexOf("R18") !== -1)
+                                        }
+                                    })
+                                    db.collection("twitter-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
+                                        if (res.length > 0) {
+                                            const tweet = res[0];
+                                            const filenames = tweet.filenames;
+                                            sendPhoto(`ID: [${tweet.id}](${tweet.link})\nUser: [${tweet.username}](${tweet.userlink})\n\n${tweet.post}`, filenames, chatId, !!tweet.isHentai)
+                                        }
+                                    })
+                                } else bot.sendMessage(chatId, "No similar images found")
+                            }).catch(err => {
+                                console.error(err)
+                                bot.sendMessage(chatId, "Failed to search")
+                            })
+                        }).catch(err => {
+                            console.error(err)
+                            bot.sendMessage(chatId, "Failed to delete")
+                        })
+                    })
+                } else {
+                    bot.sendMessage(chatId, "Reply to a photo to search")
+                } else bot.sendMessage(chatId, "Search is disabled")
+                break;
             case "/help": case "/help@" + username:
                 bot.sendMessage(chatId, "/status - Bot Status\n/random - Random image from pixiv or twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
                 break;
