@@ -168,7 +168,7 @@ bot.on('message', (msg) => {
                 if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
                     const this_file = msg.reply_to_message.photo.pop();
                     const this_file_id = this_file.file_id;
-                    const this_filename = this_file.file_unique_id;
+                    const this_filename = String(new Date().getTime()) + "." + this_file.file_unique_id.split(".").pop();
                     bot.downloadFile(this_file_id, "./image/" + this_filename).then(() => {
                         MongoPool.getInstance().then(async client => {
                             const db = client.db(config.DB_NAME);
