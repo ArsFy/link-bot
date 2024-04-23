@@ -168,14 +168,13 @@ bot.on('message', (msg) => {
                 if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
                     const this_file = msg.reply_to_message.photo.pop();
                     const this_file_id = this_file.file_id;
-                    const this_filename = String(new Date().getTime()) + "." + this_file.file_unique_id.split(".").pop();
-                    bot.downloadFile(this_file_id, "./image/" + this_filename).then(() => {
+                    bot.downloadFile(this_file_id, "./image/").then((filepath) => {
                         MongoPool.getInstance().then(async client => {
                             const db = client.db(config.DB_NAME);
-                            searchImage(`./image/${this_filename}`, 16, true, db, 0.8).then(results => {
-                                try { fs.unlink(`./image/${this_filename}`) } catch (e) { }
+                            searchImage(filepath, 16, true, db, 0.8).then(results => {
+                                try { fs.unlink(filepath) } catch (e) { }
                                 if (results.length > 0) {
-                                    const photoPath = results[0].photo_path;
+                                    const photoPath = results[0].image.photo_path;
                                     db.collection("pixiv-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
                                         if (res.length > 0) {
                                             const illust = res[0];
@@ -183,6 +182,9 @@ bot.on('message', (msg) => {
                                             const filenames = illust.filenames;
                                             sendPhoto(`ID: [${illust.id}](https://pixiv.net/i/${illust.id})\nTitle: ${illust.title}\nUser: [${illust.userName}](https://pixiv.net/users/${illust.userId})\n\nTags: #${tags.join('  #')}`, filenames, chatId, tags.indexOf("R18") !== -1)
                                         }
+                                    }).catch(err => {
+                                        console.error(err)
+                                        bot.sendMessage(chatId, "Failed to search")
                                     })
                                     db.collection("twitter-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
                                         if (res.length > 0) {
@@ -190,6 +192,9 @@ bot.on('message', (msg) => {
                                             const filenames = tweet.filenames;
                                             sendPhoto(`ID: [${tweet.id}](${tweet.link})\nUser: [${tweet.username}](${tweet.userlink})\n\n${tweet.post}`, filenames, chatId, !!tweet.isHentai)
                                         }
+                                    }).catch(err => {
+                                        console.error(err)
+                                        bot.sendMessage(chatId, "Failed to search")
                                     })
                                 } else bot.sendMessage(chatId, "No similar images found")
                             }).catch(err => {
@@ -198,7 +203,7 @@ bot.on('message', (msg) => {
                             })
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, "Failed to delete")
+                            bot.sendMessage(chatId, "Failed to search")
                         })
                     })
                 } else {
