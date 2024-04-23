@@ -164,6 +164,7 @@ bot.on('message', (msg) => {
                 } else {
                     bot.sendMessage(chatId, "You are not authorized to use this command")
                 }
+                break;
             case "/search": case "/search@" + username:
                 if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
                     const this_file_id = msg.reply_to_message.photo.pop().file_id;
@@ -233,6 +234,7 @@ bot.on('message', (msg) => {
                 } else {
                     bot.sendMessage(chatId, "/set [on/off] - Turn on/off the bot in group")
                 }
+                break
         }
     } else if (msg.chat.type != "private" && (msg.text || msg.caption || msg.caption_entities)) {
         const run = () => {
