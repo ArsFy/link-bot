@@ -60,14 +60,13 @@ const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
                     const fromChat = await bot.getChat(chatId)
                     const chatName = fromChat.title || fromChat.username || 'Unknown Chat';
                     const chatLink = fromChat.username ? `https://t.me/${fromChat.username}` : '';
-                    const imageFile = fs.readFileSync(photoPath)
-                    const msgInfo = await bot.sendPhoto(config.TEMP_CHAT, imageFile, {
+                    const msgInfo = await bot.sendPhoto(config.TEMP_CHAT, fs.readFileSync(photoPath), {
                         caption: msg + `\n\nFrom [${chatName}](${chatLink})`,
                         parse_mode: 'Markdown'
                     });
                     let imageHash, parts;
                     if (config.ENABLED_SEARCH) {
-                        imageHash = await imageHashAsync(imageFile, 16, true);
+                        imageHash = await imageHashAsync(photoPath, 16, true);
                         parts = [
                             imageHash.substring(0, imageHash.length / 4),
                             imageHash.substring(imageHash.length / 4, imageHash.length / 2),
