@@ -211,7 +211,13 @@ bot.on('message', (msg) => {
                 } else bot.sendMessage(chatId, "Search is disabled")
                 break;
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, "/status - Bot Status\n/random - Random image from pixiv or twitter\n/set [on/off] - Turn on/off the bot in group\n/help - Show this message")
+                bot.sendMessage(chatId, [
+                    "/status - Bot Status",
+                    "/random - Random image from pixiv or twitter",
+                    "/search - Search similar image from database",
+                    "/set [on/off] - Turn on/off the bot in group",
+                    "/help - Show this message"
+                ].join("\n"))
                 break;
             case "/set": case "/set@" + username:
                 if (command.length == 2) {
