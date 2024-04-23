@@ -166,11 +166,14 @@ bot.on('message', (msg) => {
                 }
             case "/search": case "/search@" + username:
                 if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
-                    const this_file_id = msg.reply_to_message.photo.pop().file_id;
-                    bot.downloadFile(this_file_id, "./image/" + this_file_id).then(() => {
+                    const this_file = msg.reply_to_message.photo.pop();
+                    const this_file_id = this_file.file_id;
+                    const this_filename = this_file.file_unique_id;
+                    bot.downloadFile(this_file_id, "./image/" + this_filename).then(() => {
                         MongoPool.getInstance().then(async client => {
                             const db = client.db(config.DB_NAME);
-                            searchImage(`./image/${this_file_id}`, 16, true, db, 0.8).then(results => {
+                            searchImage(`./image/${this_filename}`, 16, true, db, 0.8).then(results => {
+                                try { fs.unlink(`./image/${this_filename}`) } catch (e) { }
                                 if (results.length > 0) {
                                     const photoPath = results[0].photo_path;
                                     db.collection("pixiv-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
