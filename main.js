@@ -206,7 +206,7 @@ bot.on('message', (msg) => {
                                     }
                                 }
 
-                                danbooru.search(photoPath.split("/").pop()).then(async (res) => {
+                                danbooru.search(results[0].image.photo_path.split("/").pop()).then(async (res) => {
                                     try { fs.unlink(filepath) } catch (e) { }
                                     includes(res, sendPhoto, chatId, false, msg.message_id)
                                 }).catch(err => {
