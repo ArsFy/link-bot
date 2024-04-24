@@ -199,6 +199,7 @@ bot.on('message', (msg) => {
                                     const photoPath = results[0].image.photo_path;
                                     if (await searchAndSendPhoto("pixiv-images", photoPath, chatId)) return;
                                     if (await searchAndSendPhoto("twitter-images", photoPath, chatId)) return;
+                                } else {
                                     danbooru.search(photoPath.split("/").pop()).then(async (res) => {
                                         includes(res, sendPhoto, chatId, false, msg.message_id)
                                     }).catch(err => {
@@ -206,7 +207,7 @@ bot.on('message', (msg) => {
                                         if (err === "Image not found") bot.sendMessage(chatId, "No similar images found")
                                         else bot.sendMessage(chatId, "Failed to search (Danbooru)")
                                     })
-                                } else bot.sendMessage(chatId, "No similar images found")
+                                }
                             }).catch(err => {
                                 console.error(err)
                                 bot.sendMessage(chatId, "Failed to search (pHash)")
