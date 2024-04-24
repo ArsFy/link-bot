@@ -168,6 +168,10 @@ bot.on('message', (msg) => {
                 break;
             case "/search": case "/search@" + username:
                 if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
+                    bot.setMessageReaction(chatId, msg.message_id, {
+                        reaction: [{ type: 'emoji', emoji: '🙏' }]
+                    });
+
                     const this_file = msg.reply_to_message.photo.pop();
                     const this_file_id = this_file.file_id;
                     bot.downloadFile(this_file_id, "./image/").then((filepath) => {
@@ -232,7 +236,7 @@ bot.on('message', (msg) => {
                 bot.sendMessage(chatId, [
                     "/status - Bot Status",
                     "/random - Random image from pixiv or twitter",
-                    "/search - Search similar image from database",
+                    "/search - Search similar image from database / danbooru",
                     "/set [on/off] - Turn on/off the bot in group",
                     "/help - Show this message"
                 ].join("\n"))
