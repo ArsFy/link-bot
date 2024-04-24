@@ -1,4 +1,4 @@
-# Photo Link Bot
+# Pixiv/Twitter Photo Bot
 
 ![](https://img.shields.io/badge/NodeJS-v20-green)
 
@@ -30,3 +30,15 @@ node main.js
 ```bash
 node main.js
 ```
+
+### Command
+
+- `/start`  - Some Info
+- `/help`   - Help
+- `/status` - Bot Status
+- `/random` - Random image from pixiv or twitter
+- `/search` - Search similar image from database / danbooru
+- `/set [on/off]` - (GroupAdmin) Turn on/off the bot in group
+- `/delete [pixiv/twitter] [id]` - (SuperAdmin) Del Photo
+- `/allow [chatId]` - (SuperAdmin) Allow Group
+- `/disallow [chatId]` -  (SuperAdmin) Disallow Group

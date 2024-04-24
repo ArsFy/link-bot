@@ -126,6 +126,51 @@ const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
     }).catch(console.error);
 }
 
+const i18n = {
+    'zh': {
+        "start": "這個 Bot 會解析連結，當特定連結出現在群組時，會發送圖片/文字。\n使用 /help 來查看指令列表\n\nRepo: https://github.com/ArsFy/link-bot",
+        "new_chat": "在把這個 Bot 加入到新的群組時，需要先得到白名單才能正常使用。\n如果您想要在您的群組中使用這個 Bot，請聯繫 @{username} 並提供群組 ID。",
+        "new_chat_allow": "您的群組已經被授權使用此 Bot，使用 /help 來查看指令列表。",
+        "failed_to_del": "刪除失敗",
+        "failed_to_search": "搜尋失敗",
+        "failed_to_set_status": "設置狀態失敗",
+        "success": "成功",
+        "auth": "您未被授權使用此指令",
+        "no_similar_image": "沒有找到相似的圖片",
+        "reply_photo_search": "回覆一張圖片來搜尋",
+        "search_disabled": "搜尋已禁用",
+        "help": [
+            "/status - Bot 狀態",
+            "/random - 從 pixiv 或 twitter 發送隨機圖片",
+            "/search - 從 數據庫/danbooru 搜尋相似圖片",
+            "/set [on/off] - 在群組中開啟/關閉 Bot",
+            "/help - 顯示這條訊息"
+        ],
+        "only_group": "此指令僅在群組中有效"
+    },
+    'en': {
+        "start": "This Bot will parse the link and send pictures/text when a specific link appears in the group.\nUse /help to see the list of commands\n\nRepo: https://github.com/ArsFy/link-bot",
+        "new_chat": "When adding this Bot to a new group, you need to get whitelisted before you can use it normally.\nIf you want to use this Bot in your group, please contact @{username} and provide the group ID.",
+        "new_chat_allow": "Your group has been authorized to use this Bot, use /help to see the list of commands.",
+        "failed_to_del": "Failed to delete",
+        "failed_to_search": "Failed to search",
+        "failed_to_set_status": "Failed to set status",
+        "success": "Success",
+        "auth": "You are not authorized to use this command",
+        "no_similar_image": "No similar images found",
+        "reply_photo_search": "Reply to a photo to search",
+        "search_disabled": "Search is disabled",
+        "help": [
+            "/status - Bot Status",
+            "/random - Random image from pixiv or twitter",
+            "/search - Search similar image from database / danbooru",
+            "/set [on/off] - Turn on/off the bot in group",
+            "/help - Show this message"
+        ],
+        "only_group": "This command only works in group"
+    }
+}
+
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
 
@@ -136,7 +181,7 @@ bot.on('message', (msg) => {
                 [pixiv.random, twitter.random][Math.floor(Math.random() * 2)](sendPhoto, chatId);
                 break;
             case "/start": case "/start@" + username:
-                bot.sendMessage(chatId, "This Bot will parse the link and send pictures/text when a specific link appears in the group.\nUse /help to see the list of commands\n\nRepo: https://github.com/ArsFy/link-bot")
+                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].start)
                 break;
             case "/status": case "/status@" + username:
                 MongoPool.getInstance().then(async client => {
@@ -154,16 +199,16 @@ bot.on('message', (msg) => {
                         MongoPool.getInstance().then(async client => {
                             const collection = client.db(config.DB_NAME).collection(collectionName);
                             await collection.deleteOne({ id: command[1] });
-                            bot.sendMessage(chatId, "Success")
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success)
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, "Failed to delete")
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_del)
                         })
                     } else {
                         bot.sendMessage(chatId, "/delete [pixiv/twitter] [id]")
                     }
                 } else {
-                    bot.sendMessage(chatId, "You are not authorized to use this command")
+                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth)
                 }
                 break;
             case "/search": case "/search@" + username:
@@ -195,7 +240,7 @@ bot.on('message', (msg) => {
                                             } else return false;
                                         } catch (err) {
                                             console.error(err);
-                                            bot.sendMessage(chatId, "Failed to search");
+                                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search);
                                             return false;
                                         }
                                     }
@@ -216,60 +261,101 @@ bot.on('message', (msg) => {
                                 }).catch(err => {
                                     console.error(err)
                                     try { fs.unlink(filepath) } catch (e) { }
-                                    if (err === "Image not found") bot.sendMessage(chatId, "No similar images found")
-                                    else bot.sendMessage(chatId, "Failed to search (Danbooru)")
+                                    if (err === "Image not found") bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].no_similar_image)
+                                    else bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search + " (Danbooru)")
                                 })
                             }).catch(err => {
                                 console.error(err)
-                                bot.sendMessage(chatId, "Failed to search (pHash)")
+                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search + " (pHash)")
                             })
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, "Failed to search (DB)")
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search + " (DB)")
                         })
                     })
                 } else {
-                    bot.sendMessage(chatId, "Reply to a photo to search")
-                } else bot.sendMessage(chatId, "Search is disabled")
+                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].reply_photo_search)
+                } else bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].search_disabled)
                 break;
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, [
-                    "/status - Bot Status",
-                    "/random - Random image from pixiv or twitter",
-                    "/search - Search similar image from database / danbooru",
-                    "/set [on/off] - Turn on/off the bot in group",
-                    "/help - Show this message"
-                ].join("\n"))
+                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].help.join("\n"))
                 break;
             case "/set": case "/set@" + username:
                 if (command.length == 2) {
                     if (msg.chat.type === "private") {
-                        bot.sendMessage(chatId, "This command only works in group")
+                        bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].only_group)
                         return;
                     } else bot.getChatAdministrators(chatId).then(administrators => {
                         const isAdmin = administrators.some(admin => admin.user.id === msg.from.id);
                         if (isAdmin) {
                             if (command[1] != "on" && command[1] != "off") {
-                                bot.sendMessage(chatId, "/set [on/off] - Turn on/off the bot in group")
+                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].help[3])
                             } else MongoPool.getInstance().then(async client => {
                                 const collection = client.db(config.DB_NAME).collection("group");
                                 await collection.updateOne({ id: chatId }, { $set: { id: chatId, status: command[1] } }, { upsert: true });
                                 groupSetting[chatId] = command[1];
-                                bot.sendMessage(chatId, "Success");
+                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success);
                             }).catch(err => {
                                 console.error(err)
-                                bot.sendMessage(chatId, "Failed to set status")
+                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
                             })
                         } else {
-                            bot.sendMessage(chatId, "Only administrators can use this command");
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth);
                         }
                     }).catch(err => {
                         console.error(err);
                     });
                 } else {
-                    bot.sendMessage(chatId, "/set [on/off] - Turn on/off the bot in group")
+                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].help[3])
                 }
                 break
+            case "/allow": case "/allow@" + username:
+                if (config.ADMIN && msg.from.id == config.ADMIN) {
+                    if (command.length == 2) {
+                        const thisChatId = Number(command[1]);
+                        if (isNaN(thisChatId)) {
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                            return;
+                        }
+                        MongoPool.getInstance().then(async client => {
+                            const collection = client.db(config.DB_NAME).collection("group-allow");
+                            await collection.updateOne({ id: thisChatId }, { $set: { id: thisChatId } }, { upsert: true });
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success);
+                        }).catch(err => {
+                            console.error(err)
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                        })
+                    } else {
+                        bot.sendMessage(chatId, "/allow [chatId]")
+                    }
+                } else {
+                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth)
+                }
+                break;
+            case "/disallow": case "/disallow@" + username:
+                if (config.ADMIN && msg.from.id == config.ADMIN) {
+                    if (command.length == 2) {
+                        const thisChatId = Number(command[1]);
+                        if (isNaN(thisChatId)) {
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                            return;
+                        }
+                        MongoPool.getInstance().then(async client => {
+                            const collection = client.db(config.DB_NAME).collection("group-allow");
+                            await collection.deleteOne({ id: thisChatId });
+                            bot.leaveChat(thisChatId);
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success);
+                        }).catch(err => {
+                            console.error(err)
+                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_del)
+                        })
+                    } else {
+                        bot.sendMessage(chatId, "/disallow [chatId]")
+                    }
+                } else {
+                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth)
+                }
+                break;
         }
     } else if (msg.chat.type != "private" && (msg.text || msg.caption || msg.caption_entities)) {
         const run = () => {
@@ -303,6 +389,29 @@ bot.on('message', (msg) => {
         } else if (groupSetting[chatId] == "on") run()
     }
 
+});
+
+bot.on('new_chat_members', (msg) => {
+    const chatId = msg.chat.id;
+    const newMembers = msg.new_chat_members;
+    newMembers.forEach((member) => {
+        if (member.id === bot.options.me.id) {
+            MongoPool.getInstance().then(async client => {
+                const collection = client.db(config.DB_NAME).collection("group-allow");
+                const res = await collection.find({ id: chatId }).toArray();
+                if (res.length == 0) {
+                    const adminInfo = await bot.getChat(config.ADMIN)
+                    bot.sendMessage(
+                        chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"]
+                            .new_chat.replace("{username}", adminInfo.username)
+                    )
+                    bot.leaveChat(chatId);
+                } else {
+                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].new_chat_allow)
+                }
+            })
+        }
+    });
 });
 
 console.log("Bot starting...");
