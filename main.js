@@ -174,6 +174,12 @@ const i18n = {
     }
 }
 
+const i18nIndex = (language_code) => {
+    if (language_code)
+        return language_code.startsWith("zh") ? "zh" : "en"
+    else return "en"
+};
+
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
 
@@ -184,7 +190,7 @@ bot.on('message', (msg) => {
                 [pixiv.random, twitter.random][Math.floor(Math.random() * 2)](sendPhoto, chatId);
                 break;
             case "/start": case "/start@" + username:
-                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].start)
+                bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].start)
                 break;
             case "/status": case "/status@" + username:
                 MongoPool.getInstance().then(async client => {
@@ -202,16 +208,16 @@ bot.on('message', (msg) => {
                         MongoPool.getInstance().then(async client => {
                             const collection = client.db(config.DB_NAME).collection(collectionName);
                             await collection.deleteOne({ id: command[1] });
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success)
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].success)
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_del)
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_del)
                         })
                     } else {
                         bot.sendMessage(chatId, "/delete [pixiv/twitter] [id]")
                     }
                 } else {
-                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth)
+                    bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].auth)
                 }
                 break;
             case "/search": case "/search@" + username:
@@ -243,7 +249,7 @@ bot.on('message', (msg) => {
                                             } else return false;
                                         } catch (err) {
                                             console.error(err);
-                                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search);
+                                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_search);
                                             return false;
                                         }
                                     }
@@ -264,52 +270,52 @@ bot.on('message', (msg) => {
                                 }).catch(err => {
                                     console.error(err)
                                     try { fs.unlink(filepath) } catch (e) { }
-                                    if (err === "Image not found") bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].no_similar_image)
-                                    else bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search + " (Danbooru)")
+                                    if (err === "Image not found") bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].no_similar_image)
+                                    else bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_search + " (Danbooru)")
                                 })
                             }).catch(err => {
                                 console.error(err)
-                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search + " (pHash)")
+                                bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_search + " (pHash)")
                             })
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_search + " (DB)")
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_search + " (DB)")
                         })
                     })
                 } else {
-                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].reply_photo_search)
-                } else bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].search_disabled)
+                    bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].reply_photo_search)
+                } else bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].search_disabled)
                 break;
             case "/help": case "/help@" + username:
-                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].help.join("\n"))
+                bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].help.join("\n"))
                 break;
             case "/set": case "/set@" + username:
                 if (command.length == 2) {
                     if (msg.chat.type === "private") {
-                        bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].only_group)
+                        bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].only_group)
                         return;
                     } else bot.getChatAdministrators(chatId).then(administrators => {
                         const isAdmin = administrators.some(admin => admin.user.id === msg.from.id);
                         if (isAdmin) {
                             if (command[1] != "on" && command[1] != "off") {
-                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].help[3])
+                                bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].help[3])
                             } else MongoPool.getInstance().then(async client => {
                                 const collection = client.db(config.DB_NAME).collection("group");
                                 await collection.updateOne({ id: chatId }, { $set: { id: chatId, status: command[1] } }, { upsert: true });
                                 groupSetting[chatId] = command[1];
-                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success);
+                                bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].success);
                             }).catch(err => {
                                 console.error(err)
-                                bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                                bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_set_status)
                             })
                         } else {
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth);
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].auth);
                         }
                     }).catch(err => {
                         console.error(err);
                     });
                 } else {
-                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].help[3])
+                    bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].help[3])
                 }
                 break
             case "/allow": case "/allow@" + username:
@@ -317,22 +323,22 @@ bot.on('message', (msg) => {
                     if (command.length == 2) {
                         const thisChatId = Number(command[1]);
                         if (isNaN(thisChatId)) {
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_set_status)
                             return;
                         }
                         MongoPool.getInstance().then(async client => {
                             const collection = client.db(config.DB_NAME).collection("group-allow");
                             await collection.updateOne({ id: thisChatId }, { $set: { id: thisChatId } }, { upsert: true });
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success);
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].success);
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_set_status)
                         })
                     } else {
                         bot.sendMessage(chatId, "/allow [chatId]")
                     }
                 } else {
-                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth)
+                    bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].auth)
                 }
                 break;
             case "/disallow": case "/disallow@" + username:
@@ -340,23 +346,23 @@ bot.on('message', (msg) => {
                     if (command.length == 2) {
                         const thisChatId = Number(command[1]);
                         if (isNaN(thisChatId)) {
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_set_status)
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_set_status)
                             return;
                         }
                         MongoPool.getInstance().then(async client => {
                             const collection = client.db(config.DB_NAME).collection("group-allow");
                             await collection.deleteOne({ id: thisChatId });
                             bot.leaveChat(thisChatId);
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].success);
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].success);
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].failed_to_del)
+                            bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].failed_to_del)
                         })
                     } else {
                         bot.sendMessage(chatId, "/disallow [chatId]")
                     }
                 } else {
-                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].auth)
+                    bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].auth)
                 }
                 break;
         }
@@ -405,12 +411,12 @@ bot.on('new_chat_members', (msg) => {
                 if (res.length == 0) {
                     const adminInfo = await bot.getChat(config.ADMIN)
                     bot.sendMessage(
-                        chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"]
+                        chatId, i18n[i18nIndex(msg.from.language_code)]
                             .new_chat.replace("{username}", adminInfo.username)
                     )
                     bot.leaveChat(chatId);
                 } else {
-                    bot.sendMessage(chatId, i18n[msg.from.language_code.startsWith("zh") ? "zh" : "en"].new_chat_allow)
+                    bot.sendMessage(chatId, i18n[i18nIndex(msg.from.language_code)].new_chat_allow)
                 }
             })
         }
