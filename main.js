@@ -174,7 +174,6 @@ bot.on('message', (msg) => {
                         MongoPool.getInstance().then(async client => {
                             const db = client.db(config.DB_NAME);
                             searchImage(filepath, 16, true, db, 0.8).then(async results => {
-                                try { fs.unlink(filepath) } catch (e) { }
                                 if (results.length > 0) {
                                     const searchAndSendPhoto = async (collectionName, photoPath, chatId) => {
                                         try {
@@ -197,14 +196,22 @@ bot.on('message', (msg) => {
                                         }
                                     }
                                     const photoPath = results[0].image.photo_path;
-                                    if (await searchAndSendPhoto("pixiv-images", photoPath, chatId)) return;
-                                    if (await searchAndSendPhoto("twitter-images", photoPath, chatId)) return;
+                                    if (await searchAndSendPhoto("pixiv-images", photoPath, chatId)) {
+                                        try { fs.unlink(filepath) } catch (e) { }
+                                        return;
+                                    }
+                                    if (await searchAndSendPhoto("twitter-images", photoPath, chatId)) {
+                                        try { fs.unlink(filepath) } catch (e) { }
+                                        return;
+                                    }
                                 }
 
                                 danbooru.search(photoPath.split("/").pop()).then(async (res) => {
+                                    try { fs.unlink(filepath) } catch (e) { }
                                     includes(res, sendPhoto, chatId, false, msg.message_id)
                                 }).catch(err => {
                                     console.error(err)
+                                    try { fs.unlink(filepath) } catch (e) { }
                                     if (err === "Image not found") bot.sendMessage(chatId, "No similar images found")
                                     else bot.sendMessage(chatId, "Failed to search (Danbooru)")
                                 })
