@@ -41,10 +41,13 @@ try { fs.mkdirSync("./image") } catch (e) { }
 MongoPool.initPool()
 
 // Init Bot
-let username = "";
+let username = "", me_id = -1;
 const bot = new TelegramBot(config.BOT_TOKEN, { polling: true });
 bot.on("polling_error", console.log);
-bot.getMe().then(me => username = me.username);
+bot.getMe().then(me => {
+    username = me.username;
+    me_id = me.id;
+});
 
 const sendPhoto = (msg, filenames, chatId, hasSpoiler) => {
     filenames = filenames.slice(0, 6);
@@ -395,7 +398,7 @@ bot.on('new_chat_members', (msg) => {
     const chatId = msg.chat.id;
     const newMembers = msg.new_chat_members;
     newMembers.forEach((member) => {
-        if (member.id === bot.options.me.id) {
+        if (member.id === me_id) {
             MongoPool.getInstance().then(async client => {
                 const collection = client.db(config.DB_NAME).collection("group-allow");
                 const res = await collection.find({ id: chatId }).toArray();
