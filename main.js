@@ -5,6 +5,7 @@ const fs = require('fs');
 const MongoPool = require("./db-pool");
 const pixiv = require('./pixiv');
 const twitter = require('./twitter');
+const danbooru = require('./danbooru');
 const { imageHashAsync, searchImage } = require('./phash');
 
 // Group Setting Cache
@@ -172,39 +173,47 @@ bot.on('message', (msg) => {
                     bot.downloadFile(this_file_id, "./image/").then((filepath) => {
                         MongoPool.getInstance().then(async client => {
                             const db = client.db(config.DB_NAME);
-                            searchImage(filepath, 16, true, db, 0.8).then(results => {
+                            searchImage(filepath, 16, true, db, 0.8).then(async results => {
                                 try { fs.unlink(filepath) } catch (e) { }
                                 if (results.length > 0) {
+                                    const searchAndSendPhoto = async (collectionName, photoPath, chatId) => {
+                                        try {
+                                            const res = await db.collection(collectionName).find({ filenames: { $in: [photoPath] } }).toArray();
+                                            if (res.length > 0) {
+                                                const item = res[0];
+                                                const filenames = item.filenames;
+                                                if (collectionName === "pixiv-images") {
+                                                    const tags = item.tags;
+                                                    sendPhoto(`ID: [${item.id}](https://pixiv.net/i/${item.id})\nTitle: ${item.title}\nUser: [${item.userName}](https://pixiv.net/users/${item.userId})\n\nTags: #${tags.join('  #')}`, filenames, chatId, tags.indexOf("R18") !== -1);
+                                                } else if (collectionName === "twitter-images") {
+                                                    sendPhoto(`ID: [${item.id}](${item.link})\nUser: [${item.username}](${item.userlink})\n\n${item.post}`, filenames, chatId, !!item.isHentai);
+                                                }
+                                                return true;
+                                            } else return false;
+                                        } catch (err) {
+                                            console.error(err);
+                                            bot.sendMessage(chatId, "Failed to search");
+                                            return false;
+                                        }
+                                    }
                                     const photoPath = results[0].image.photo_path;
-                                    db.collection("pixiv-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
-                                        if (res.length > 0) {
-                                            const illust = res[0];
-                                            const tags = illust.tags;
-                                            const filenames = illust.filenames;
-                                            sendPhoto(`ID: [${illust.id}](https://pixiv.net/i/${illust.id})\nTitle: ${illust.title}\nUser: [${illust.userName}](https://pixiv.net/users/${illust.userId})\n\nTags: #${tags.join('  #')}`, filenames, chatId, tags.indexOf("R18") !== -1)
-                                        }
+                                    if (await searchAndSendPhoto("pixiv-images", photoPath, chatId)) return;
+                                    if (await searchAndSendPhoto("twitter-images", photoPath, chatId)) return;
+                                    danbooru.search(photoPath.split("/").pop()).then(async (res) => {
+                                        includes(res, sendPhoto, chatId, false, msg.message_id)
                                     }).catch(err => {
                                         console.error(err)
-                                        bot.sendMessage(chatId, "Failed to search")
-                                    })
-                                    db.collection("twitter-images").find({ filenames: { $in: [photoPath] } }).toArray().then(res => {
-                                        if (res.length > 0) {
-                                            const tweet = res[0];
-                                            const filenames = tweet.filenames;
-                                            sendPhoto(`ID: [${tweet.id}](${tweet.link})\nUser: [${tweet.username}](${tweet.userlink})\n\n${tweet.post}`, filenames, chatId, !!tweet.isHentai)
-                                        }
-                                    }).catch(err => {
-                                        console.error(err)
-                                        bot.sendMessage(chatId, "Failed to search")
+                                        if (err === "Image not found") bot.sendMessage(chatId, "No similar images found")
+                                        else bot.sendMessage(chatId, "Failed to search (Danbooru)")
                                     })
                                 } else bot.sendMessage(chatId, "No similar images found")
                             }).catch(err => {
                                 console.error(err)
-                                bot.sendMessage(chatId, "Failed to search")
+                                bot.sendMessage(chatId, "Failed to search (pHash)")
                             })
                         }).catch(err => {
                             console.error(err)
-                            bot.sendMessage(chatId, "Failed to search")
+                            bot.sendMessage(chatId, "Failed to search (DB)")
                         })
                     })
                 } else {
