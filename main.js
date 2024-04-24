@@ -169,7 +169,7 @@ bot.on('message', (msg) => {
             case "/search": case "/search@" + username:
                 if (config.ENABLED_SEARCH) if (msg.reply_to_message && msg.reply_to_message.photo) {
                     bot.setMessageReaction(chatId, msg.message_id, {
-                        reaction: [{ type: 'emoji', emoji: '🙏' }]
+                        reaction: [{ type: 'emoji', emoji: '👌' }]
                     });
 
                     const this_file = msg.reply_to_message.photo.pop();
